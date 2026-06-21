@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Carteira</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+    body {
+        /* Gradiente metálico: cinza aço para um azulado profundo */
+        background: linear-gradient(160deg, #2c3e50, #4ca1af);
+        min-height: 100vh;
+        color: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .card { 
+        background: rgba(255, 255, 255, 0.92) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .table-responsive { 
+        background: rgba(255, 255, 255, 0.95); 
+        border-radius: 10px;
+    }
+
+    h1 { color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+    
+    /* Ajuste para garantir que o texto dentro dos cards permaneça legível */
+    .text-muted { color: #555 !important; }
+</style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Minha Carteira</h1>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card p-4 shadow-sm border-start border-primary border-4">
+                    <h6 class="text-uppercase text-muted">Total Investido</h6>
+                    <h3>R$ {{ "%.2f"|format(total_geral) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 shadow-sm border-start border-success border-4">
+                    <h6 class="text-uppercase text-muted">Saldo Real de Mercado</h6>
+                    <h3>R$ {{ "%.2f"|format(valor_atual_total) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4 shadow-sm">
+            <h4 class="mb-3">Adicionar Ação</h4>
+            <form method="POST" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="ticker" class="form-control" placeholder="Ticker (ex: PETR4)" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" step="0.01" name="preco" class="form-control" placeholder="Preço Médio" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="qtd" class="form-control" placeholder="Quantidade" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Adicionar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive shadow-sm bg-white p-3 rounded">
+           <table class="table table-hover align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Data</th> <th>Ticker</th>
+            <th>Qtd</th>
+            <th>Preço Médio</th>
+            <th>Preço Mercado</th>
+            <th>Lucro</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transacoes %}
+        <tr>
+            <td>{{ t.data_compra.strftime('%d/%m/%Y') }}</td>
+            
+            <td class="fw-bold">{{ t.ticker }}</td>
+            <td>{{ t.quantidade }}</td>
+            <td>R$ {{ "%.2f"|format(t.preco_compra) }}</td>
+            
+            <td>
+                <form action="{{ url_for('main.atualizar', id=t.id) }}" method="POST" class="d-flex">
+                    <input type="number" step="0.01" name="novo_preco" value="{{ t.preco_mercado_atual }}" class="form-control form-control-sm me-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Ok</button>
+                </form>
+            </td>
+
+            <td class="fw-bold {{ 'text-success' if t.lucro >= 0 else 'text-danger' }}">
+                {{ '▲' if t.lucro >= 0 else '▼' }} R$ {{ "%.2f"|format(t.lucro) }}
+                <small class="d-block text-muted" style="font-size: 0.7em;">{{ "%.2f"|format(t.lucro_pct) }}%</small>
+            </td>
+
+            <td>
+                <a href="{{ url_for('main.excluir', id=t.id) }}" class="btn btn-sm btn-danger">Excluir</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+        </div>
+    </div>
+</body>
+</html>
