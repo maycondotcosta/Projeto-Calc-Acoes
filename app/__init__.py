@@ -5,23 +5,16 @@ from .models import db
 def create_app():
     app = Flask(__name__)
     
-    # URL do banco
-    db_url = os.environ.get('DATABASE_URL')
-    
-    # Se a conexão falhar no início, o Flask ainda vai subir
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///local.db'
+    # Define o caminho do banco SQLite dentro do projeto
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    # Define um timeout curto para não travar o site esperando o banco
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'connect_timeout': 5}}
     
     db.init_app(app)
     
     with app.app_context():
-        # Tentamos criar as tabelas apenas se possível
-        try:
-            db.create_all()
-        except:
-            print("Aviso: Não foi possível conectar ao banco remoto, rodando em modo limitado.")
+        # Cria o arquivo do banco se não existir
+        db.create_all()
         
         from .routes import main_bp
         app.register_blueprint(main_bp)
