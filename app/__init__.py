@@ -1,21 +1,24 @@
-import os
 from flask import Flask
-from .models import db
+from .models import db  # Importa a instância única definida no models.py
 
 def create_app():
+    # 1. Cria a instância do Flask
     app = Flask(__name__)
     
-    # Define o caminho do banco SQLite dentro do projeto
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+    # 2. Configuração do Banco de Dados
+    # SQLite local criado na raiz da aplicação
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///projeto_calc.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # 3. Inicializa o banco de dados com o app
     db.init_app(app)
     
+    # 4. Registra as rotas dentro do contexto da aplicação
     with app.app_context():
-        # Cria o arquivo do banco se não existir
+        # Cria as tabelas no arquivo .db automaticamente se não existirem
         db.create_all()
         
+        # Importa e registra as rotas (Blueprints)
         from .routes import main_bp
         app.register_blueprint(main_bp)
         
