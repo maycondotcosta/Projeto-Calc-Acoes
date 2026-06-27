@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for
+from collections import defaultdict
 from .models import db, Transacao
 
 main_bp = Blueprint('main', __name__)
@@ -18,31 +19,38 @@ def index():
 
     transacoes = Transacao.query.all()
     
+    # Dicionário para agrupar dados por Ticker (Consolidação)
+    resumo = defaultdict(lambda: {'qtd': 0, 'total_investido': 0, 'preco_atual': 0})
+    
+    for t in transacoes:
+        resumo[t.ticker]['qtd'] += t.quantidade
+        resumo[t.ticker]['total_investido'] += (t.preco_compra * t.quantidade)
+        # O preço de mercado atualizado sobrescreve o anterior se existir
+        if t.preco_mercado_atual > 0:
+            resumo[t.ticker]['preco_atual'] = t.preco_mercado_atual
+        elif resumo[t.ticker]['preco_atual'] == 0:
+            # Caso não tenha preço atual, assume o preço de compra para não ficar zerado
+            resumo[t.ticker]['preco_atual'] = t.preco_compra
+
+    # Processamento para o template
     dados_processados = []
     total_investido_geral = 0
     total_mercado_geral = 0
     
-    for t in transacoes:
-        # Se não houver preço de mercado definido, usa o de compra (não tem lucro)
-        preco_ref = t.preco_mercado_atual if t.preco_mercado_atual > 0 else t.preco_compra
+    for ticker, info in resumo.items():
+        preco_medio = info['total_investido'] / info['qtd'] if info['qtd'] > 0 else 0
+        valor_mercado = info['qtd'] * info['preco_atual']
+        lucro_financeiro = valor_mercado - info['total_investido']
         
-        valor_mercado = preco_ref * t.quantidade
-        lucro = (preco_ref - t.preco_compra) * t.quantidade
-        lucro_pct = ((preco_ref - t.preco_compra) / t.preco_compra * 100) if t.preco_compra > 0 else 0
-        
-        total_investido_geral += t.total_investido
+        total_investido_geral += info['total_investido']
         total_mercado_geral += valor_mercado
         
         dados_processados.append({
-            'id': t.id,
-            'ticker': t.ticker,
-            'data_compra': t.data_compra,
-            'quantidade': t.quantidade,
-            'preco_compra': t.preco_compra,
-            'total_investido': t.total_investido,
-            'preco_mercado_atual': t.preco_mercado_atual,
-            'lucro': lucro,
-            'lucro_pct': lucro_pct
+            'ticker': ticker,
+            'quantidade': info['qtd'],
+            'preco_medio': preco_medio,
+            'valor_mercado': valor_mercado,
+            'lucro': lucro_financeiro
         })
         
     return render_template(
@@ -52,10 +60,13 @@ def index():
         valor_atual_total=total_mercado_geral
     )
 
-@main_bp.route('/atualizar/<int:id>', methods=['POST'])
-def atualizar(id):
-    transacao = Transacao.query.get_or_404(id)
-    transacao.preco_mercado_atual = float(request.form['novo_preco'])
+@main_bp.route('/atualizar/<ticker>', methods=['POST'])
+def atualizar(ticker):
+    # Atualiza todas as transações daquele ticker com o novo preço de mercado
+    novo_preco = float(request.form['novo_preco'])
+    transacoes = Transacao.query.filter_by(ticker=ticker).all()
+    for t in transacoes:
+        t.preco_mercado_atual = novo_preco
     db.session.commit()
     return redirect(url_for('main.index'))
 

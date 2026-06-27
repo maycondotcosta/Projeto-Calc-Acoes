@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-# Instância única do banco de dados
+# Instância única para todo o projeto
 db = SQLAlchemy()
 
 class Carteira(db.Model):
