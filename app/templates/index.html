@@ -2,23 +2,32 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora de Investimentos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Calculadora de Ações</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background-color: #f9f9f9; }
+        h1 { color: #333; text-align: center; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        form { margin-bottom: 30px; display: flex; gap: 10px; justify-content: center; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        .lucro-positivo { color: green; }
-        .lucro-negativo { color: red; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .lucro-positivo { color: green; font-weight: bold; }
+        .lucro-negativo { color: red; font-weight: bold; }
+        .resumo { margin-top: 30px; padding: 20px; background: #eef; border-radius: 8px; }
     </style>
 </head>
 <body>
 
+<div class="container">
     <h1>Minha Calculadora de Ações</h1>
 
     <form method="POST" action="/">
         <input type="text" name="ticker" placeholder="Ticker (ex: PETR4)" required>
-        <input type="number" name="preco" step="0.01" placeholder="Preço de Compra" required>
-        <input type="number" name="qtd" placeholder="Quantidade" required>
+        <input type="number" name="preco" step="0.01" placeholder="Preço" required>
+        <input type="number" name="qtd" placeholder="Qtd" required>
         <button type="submit">Adicionar Compra</button>
     </form>
 
@@ -26,9 +35,9 @@
         <thead>
             <tr>
                 <th>Ticker</th>
-                <th>Quantidade Total</th>
+                <th>Qtd Total</th>
                 <th>Preço Médio</th>
-                <th>Valor de Mercado</th>
+                <th>Valor Mercado</th>
                 <th>Lucro/Prejuízo</th>
                 <th>Atualizar Preço</th>
             </tr>
@@ -44,8 +53,8 @@
                     R$ {{ "%.2f"|format(t.lucro) }}
                 </td>
                 <td>
-                    <form action="/atualizar/{{ t.ticker }}" method="POST">
-                        <input type="number" name="novo_preco" step="0.01" placeholder="Novo Preço" required>
+                    <form action="/atualizar/{{ t.ticker }}" method="POST" style="display:inline;">
+                        <input type="number" name="novo_preco" step="0.01" style="width: 70px;" required>
                         <button type="submit">Ok</button>
                     </form>
                 </td>
@@ -54,10 +63,12 @@
         </tbody>
     </table>
 
-    <hr>
-    <h3>Resumo Geral</h3>
-    <p>Total Investido: <strong>R$ {{ "%.2f"|format(total_geral) }}</strong></p>
-    <p>Valor Atual de Mercado: <strong>R$ {{ "%.2f"|format(valor_atual_total) }}</strong></p>
+    <div class="resumo">
+        <h3>Resumo Geral</h3>
+        <p>Total Investido: <strong>R$ {{ "%.2f"|format(total_geral) }}</strong></p>
+        <p>Valor Atual de Mercado: <strong>R$ {{ "%.2f"|format(valor_atual_total) }}</strong></p>
+    </div>
+</div>
 
 </body>
 </html>
