@@ -8,24 +8,22 @@ def create_app():
     # URL do banco
     db_url = os.environ.get('DATABASE_URL')
     
-    # Se a URL não estiver definida (ou falhar), usamos SQLite para não travar o servidor
-    if db_url and db_url.startswith("postgresql"):
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-    else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-        
+    # Se a conexão falhar no início, o Flask ainda vai subir
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///local.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Define um timeout curto para não travar o site esperando o banco
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'connect_timeout': 5}}
     
     db.init_app(app)
     
-    # Criar tabelas se for SQLite, para evitar erro de tabela não encontrada
     with app.app_context():
+        # Tentamos criar as tabelas apenas se possível
         try:
             db.create_all()
         except:
-            pass # Ignora erro de conexão com Postgres e tenta subir assim mesmo
+            print("Aviso: Não foi possível conectar ao banco remoto, rodando em modo limitado.")
         
         from .routes import main_bp
         app.register_blueprint(main_bp)
-    
+        
     return app
